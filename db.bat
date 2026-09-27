@@ -1,0 +1,33 @@
+pyinstaller --noconsole --onefile ^
+  --name inputshow ^
+  --hidden-import=pynput.keyboard._win32 ^
+  --hidden-import=pynput.mouse._win32 ^
+  --hidden-import=PyQt5.QtNetwork ^
+  --exclude-module PyQt5.QtWebEngineWidgets ^
+  --exclude-module PyQt5.QtWebEngineCore ^
+  --exclude-module PyQt5.QtQuick ^
+  --exclude-module PyQt5.QtQml ^
+  --exclude-module PyQt5.QtMultimedia ^
+  --exclude-module PyQt5.QtMultimediaWidgets ^
+  --exclude-module PyQt5.QtBluetooth ^
+  --exclude-module PyQt5.QtDesigner ^
+  --exclude-module PyQt5.QtHelp ^
+  --exclude-module PyQt5.QtLocation ^
+  --exclude-module PyQt5.QtNfc ^
+  --exclude-module PyQt5.QtPositioning ^
+  --exclude-module PyQt5.QtSerialPort ^
+  --exclude-module PyQt5.QtSql ^
+  --exclude-module PyQt5.QtTest ^
+  --exclude-module PyQt5.QtWebChannel ^
+  --exclude-module PyQt5.QtWebSockets ^
+  --exclude-module PyQt5.QtXml ^
+  --exclude-module PyQt5.QtXmlPatterns ^
+  --exclude-module matplotlib ^
+  --exclude-module numpy ^
+  --exclude-module scipy ^
+  --exclude-module PIL ^
+  --exclude-module tkinter ^
+  --exclude-module unittest ^
+  --exclude-module pydoc ^
+  --upx-dir "C:\upx" ^
+ -F -w -i ips.ico main.py

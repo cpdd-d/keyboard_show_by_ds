@@ -20,7 +20,7 @@
 - 📌 **强制置顶**：周期检查窗口层级，防止切输入法/切窗口后掉层
 - 📦 **单实例运行**：重复启动只会唤起已有窗口，不会打开多个
 - ⚙️ **设置即时生效**：所有修改保存到 QSettings，下次启动自动恢复
-##需要python 环境，pyqt5,pynput
+
 
 
 
@@ -41,10 +41,6 @@ Q：设置里改颜色时看不到预览？
 
 A：预览区域在对话框顶部，拖动调色板时会实时刷新。
 
-Q：能不能显示中文按键？
-
-A：暂不支持。pynput 在 Windows 上无法获取输入法的候选字符，只能拿到物理按键。
-
 Q：会不会被某些程序挡住？
 
 A：程序每 2 秒检查一次窗口层级，正常应用都能盖过去。以下情况无法置顶（Windows 系统限制）：
@@ -54,3 +50,57 @@ UAC 安全桌面
 Ctrl+Alt+Del 界面
 
 部分全屏独占游戏
+
+
+
+# 🐟 Keyboard + Mouse Input Overlay
+A lightweight Windows desktop utility based on "Big Blue Fat Fish". It displays your pressed **keyboard keys** and **mouse actions** in real‑time at a corner of your screen.
+The window is fully **click‑through** when idle and will not block any mouse clicks. Right‑click the ring handle to open the menu for configuration.
+
+> Ideal for screen recording, teaching demos, live streaming and remote support. Lets viewers instantly see which keys you are pressing.
+
+---
+## ✨ Features
+- 🎯 **Real‑time key display**: Letters, numbers, symbols, F1‑F12, arrow keys and modifier keys (Ctrl / Shift / Alt / Win)
+- 🖱️ **Mouse action display**: Left‑click, right‑click, middle‑click, scroll wheel up / down
+- 🔗 **Combination key support**: Combinations such as `Ctrl+Shift+S` are shown as one single card instead of three separate ones
+- ⏱️ **Long‑press duration tracking**: When a key is held longer than 0.6 seconds, its hold time like `A*2s` will be shown upon release
+- 🖥️ **Click‑through window**: The window becomes completely transparent to mouse input while idle and never interferes with normal operations
+- ⭕ **Ring handle**: The ring brightens when your mouse hovers over it; right‑click brings up the menu
+- 🎨 **Color themes**: 5 built‑in themes, plus custom text and background colors for keyboard and mouse cards
+- 🔤 **Custom fonts**: Supports `.ttf` / `.otf` / `.ttc` font files
+- 🎬 **Smooth animations**: Cards slide in from off‑screen, arrange side‑by‑side, fade out, shrink and slide away upward or leftward
+- 📌 **Always‑on‑top enforcement**: Periodically checks window layering to prevent losing top‑most status after switching input methods or windows
+- 📦 **Single‑instance mode**: Re‑launching the program activates the existing window instead of opening duplicate instances
+- ⚙️ **Instant‑apply settings**: All preferences are saved to QSettings and automatically restored on next launch
+
+Requires Python environment, pyqt5 and pynput.
+
+## ❓ FAQ
+Q: Why are my keystrokes not showing up?
+A: Please verify:
+The option is enabled under *Settings → Keyboard Key Display*.
+Your input method is set to English. Keystrokes from Chinese input methods cannot be reliably captured by this program.
+
+Q: The window moved off‑screen and I cannot find it. What can I do?
+A: Right‑click the tray icon → Settings → Adjust Position… You can set exact coordinates or snap the window to any screen corner with one click.
+
+Q: I cannot see previews when changing colors in settings.
+A: The preview area is at the top of the settings dialog. Previews refresh live as you drag the color picker.
+
+Q: Can it display Chinese characters?
+A: Not currently supported. On Windows, pynput can only read physical hardware keystrokes and cannot obtain candidate characters from input‑method software.
+
+Q: Can some applications cover this overlay?
+A: The program checks window layering every two seconds and stays above most regular applications. Certain scenarios are restricted by Windows system rules and cannot stay on top:
+- UAC secure desktop
+- Ctrl+Alt+Del screen
+- Some full‑screen exclusive games
+
+
+
+
+
+
+
+

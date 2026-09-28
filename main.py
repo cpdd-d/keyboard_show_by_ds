@@ -1447,12 +1447,12 @@ class InputPet(QWidget):
 
         def on_click(x, y, button, pressed):
             try:
-                # 右键：在圆环内按下 → 记录；抬起 → 弹出菜单
+                # 右键：按下时在圆环内记一笔，抬起时弹菜单；
+                # 同时和左键/中键一样显示卡片，不再直接 return 掉。
                 if (button == mouse.Button.right
                         and self.isVisible()):
                     if pressed:
                         self._right_press_in_ring = _in_ring(x, y)
-                        return
                     else:
                         was_in = getattr(
                             self, "_right_press_in_ring", False)
@@ -1460,7 +1460,6 @@ class InputPet(QWidget):
                         if was_in:
                             self.show_menu_signal.emit(
                                 int(x), int(y))
-                        return
 
                 if not pressed:
                     return

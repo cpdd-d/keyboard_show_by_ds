@@ -8,7 +8,7 @@
 
 ## ✨ 特性
 
-- 🎯 **实时按键显示**：字母、数字、符号、F1–F12、方向键、修饰键（Ctrl / Shift / Alt / Win）
+- 🎯 **实时按键显示**：字母、数字、符号、F1–F24、方向键、修饰键（Ctrl / Shift / Alt / Win，左右键都能识别）、小键盘锁定/滚动锁定/打印屏幕/暂停、音量与媒体控制键
 - 🖱️ **鼠标操作显示**：左键 / 右键 / 中键 / 滚轮上下
 - 🔗 **组合键支持**：`Ctrl+Shift+S` 这类组合会合并为一张卡片，不会拆成三张
 - ⏱️ **长按计时**：按住某个键超过 0.6 秒，松开后显示 `A*2s` 这样的持续时间
@@ -124,7 +124,7 @@ The window is fully **click-through** when idle and will not block any mouse cli
 
 ## ✨ Features
 
-- 🎯 **Real-time key display**: Letters, numbers, symbols, F1-F12, arrow keys and modifier keys (Ctrl / Shift / Alt / Win)
+- 🎯 **Real-time key display**: Letters, numbers, symbols, F1-F24, arrow keys, modifier keys (Ctrl / Shift / Alt / Win, both left and right), Num Lock / Scroll Lock / Print Screen / Pause, and the volume / media keys
 - 🖱️ **Mouse action display**: Left-click, right-click, middle-click, scroll wheel up / down
 - 🔗 **Combination key support**: Combinations such as `Ctrl+Shift+S` are shown as one single card instead of three separate ones
 - ⏱️ **Long-press duration tracking**: When a key is held longer than 0.6 seconds, its hold time like `A*2s` will be shown upon release

@@ -1292,12 +1292,19 @@ class InputPet(QWidget):
         except Exception:
             return
 
+        # 注意：Windows 上左/右修饰键是各自独立的虚拟键码，pynput 会分别上报
+        # Key.alt_l(164) / Key.alt_r(165) / Key.ctrl_l(162) / Key.ctrl_r(163) /
+        # Key.shift(160) / Key.shift_r(161)。只映射 Key.alt(18) 这类"通用"名会
+        # 导致真实按键落空（左 Alt 就是这样丢的），所以两边都要列全。
         MOD = {
-            keyboard.Key.ctrl_l: "Ctrl", keyboard.Key.ctrl_r: "Ctrl",
-            keyboard.Key.shift: "Shift", keyboard.Key.shift_r: "Shift",
-            keyboard.Key.alt: "Alt", keyboard.Key.alt_r: "Alt",
-            keyboard.Key.alt_gr: "Alt",
-            keyboard.Key.cmd: "Win", keyboard.Key.cmd_r: "Win",
+            keyboard.Key.ctrl: "Ctrl", keyboard.Key.ctrl_l: "Ctrl",
+            keyboard.Key.ctrl_r: "Ctrl",
+            keyboard.Key.shift: "Shift", keyboard.Key.shift_l: "Shift",
+            keyboard.Key.shift_r: "Shift",
+            keyboard.Key.alt: "Alt", keyboard.Key.alt_l: "Alt",
+            keyboard.Key.alt_r: "Alt", keyboard.Key.alt_gr: "Alt",
+            keyboard.Key.cmd: "Win", keyboard.Key.cmd_l: "Win",
+            keyboard.Key.cmd_r: "Win",
         }
         NAMED = {
             keyboard.Key.enter: "Enter", keyboard.Key.tab: "Tab",
@@ -1311,8 +1318,20 @@ class InputPet(QWidget):
             keyboard.Key.up: "↑", keyboard.Key.down: "↓",
             keyboard.Key.left: "←", keyboard.Key.right: "→",
             keyboard.Key.caps_lock: "Caps",
+            keyboard.Key.num_lock: "Num",
+            keyboard.Key.scroll_lock: "Scroll",
+            keyboard.Key.print_screen: "PrtSc",
+            keyboard.Key.pause: "Pause",
+            keyboard.Key.menu: "Menu",
+            keyboard.Key.media_volume_up: "音量+",
+            keyboard.Key.media_volume_down: "音量-",
+            keyboard.Key.media_volume_mute: "静音",
+            keyboard.Key.media_play_pause: "播放/暂停",
+            keyboard.Key.media_next: "下一曲",
+            keyboard.Key.media_previous: "上一曲",
+            keyboard.Key.media_stop: "停止",
         }
-        for i in range(1, 13):
+        for i in range(1, 25):
             k = getattr(keyboard.Key, f"f{i}", None)
             if k is not None:
                 NAMED[k] = f"F{i}"

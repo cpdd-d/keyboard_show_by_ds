@@ -520,12 +520,37 @@ class InputPet(QWidget):
             wy + self.height() // 2)
         self._ring_radius_global = (RING_R + RING_HIT_PAD) * self.scale
 
+    def _set_click_through(self, on):
+        """切换 Win32 的 WS_EX_TRANSPARENT —— 这才是系统判定"这个窗口是否吃
+        鼠标点击"的依据。
+
+        只设 Qt 的 WA_TransparentForMouseEvents 不起作用（实测它根本不修改
+        exstyle），必须用 WindowTransparentForInput 或直接改样式位。这里直接改
+        样式位：不重建原生窗口、不闪、也不依赖窗口标志的重新应用时机。
+        """
+        self.setAttribute(Qt.WA_TransparentForMouseEvents, bool(on))
+        if sys.platform != "win32":
+            return
+        try:
+            import ctypes
+            GWL_EXSTYLE = -20
+            WS_EX_TRANSPARENT = 0x00000020
+            user32 = ctypes.windll.user32
+            user32.GetWindowLongW.restype = ctypes.c_long
+            hwnd = int(self.winId())
+            ex = user32.GetWindowLongW(hwnd, GWL_EXSTYLE)
+            new = (ex | WS_EX_TRANSPARENT) if on else (ex & ~WS_EX_TRANSPARENT)
+            if new != ex:
+                user32.SetWindowLongW(hwnd, GWL_EXSTYLE, new)
+        except Exception:
+            pass
+
     def _apply_mouse_mode(self):
         if self.adjust_mode:
-            self.setAttribute(Qt.WA_TransparentForMouseEvents, False)
+            self._set_click_through(False)
             self._refresh_mask()
         else:
-            self.setAttribute(Qt.WA_TransparentForMouseEvents, True)
+            self._set_click_through(True)
             self.clearMask()
         self.update()
 

@@ -17,9 +17,15 @@ build/
 dist/
 *.spec
 
-# 自带字体不入库：体积大且多数商用字体不允许再分发
-assets/fonts/*
-!assets/fonts/README.md
+# 自带字体不入库：体积大且多数商用字体不允许再分发。
+# 注意：不能写成 assets/fonts/* 再配 !assets/fonts/README.md —— 一旦父目录被
+# 通配符排除，Git 就不会再用 ! 重新包含其中的文件，README 会连文件一起消失。
+# 这里改成只排除字体扩展名，目录本身保持可跟踪。
+assets/fonts/*.ttf
+assets/fonts/*.ttc
+assets/fonts/*.otf
+assets/fonts/*.woff
+assets/fonts/*.woff2
 
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs
@@ -324,7 +330,6 @@ paket-files/
 .cr/personal
 
 # Python Tools for Visual Studio (PTVS)
-__pycache__/
 *.pyc
 
 # Cake - Uncomment if you are using it

@@ -521,58 +521,64 @@ class InputPet(QWidget):
         self._ring_radius_global = (RING_R + RING_HIT_PAD) * self.scale
 
     def _set_click_through(self, on):
-        """切换 Win32 的 WS_EX_TRANSPARENT —— 这才是系统判定"这个窗口是否吃
-        鼠标点击"的依据。
+        """非拖动模式下让 Qt 忽略窗口自身的鼠标事件。
 
-        只设 Qt 的 WA_TransparentForMouseEvents 不起作用（实测它根本不修改
-        exstyle），必须用 WindowTransparentForInput 或直接改样式位。这里直接改
-        样式位：不重建原生窗口、不闪、也不依赖窗口标志的重新应用时机。
+        注意：这个属性在 Windows 上并不会设置 WS_EX_TRANSPARENT（实测
+        exstyle 完全不变），所以它既不负责"穿透"也不负责"挡住桌面" ——
+        真正的分区穿透由 _refresh_mask() 的窗口掩码完成。这里只保证
+        非拖动模式下 Qt 不去处理落在圆环上的鼠标事件（右键菜单走全局钩子）。
         """
         self.setAttribute(Qt.WA_TransparentForMouseEvents, bool(on))
-        if sys.platform != "win32":
-            return
-        try:
-            import ctypes
-            GWL_EXSTYLE = -20
-            WS_EX_TRANSPARENT = 0x00000020
-            user32 = ctypes.windll.user32
-            user32.GetWindowLongW.restype = ctypes.c_long
-            hwnd = int(self.winId())
-            ex = user32.GetWindowLongW(hwnd, GWL_EXSTYLE)
-            new = (ex | WS_EX_TRANSPARENT) if on else (ex & ~WS_EX_TRANSPARENT)
-            if new != ex:
-                user32.SetWindowLongW(hwnd, GWL_EXSTYLE, new)
-        except Exception:
-            pass
 
     def _apply_mouse_mode(self):
-        if self.adjust_mode:
-            self._set_click_through(False)
-            self._refresh_mask()
-        else:
-            self._set_click_through(True)
-            self.clearMask()
+        # 穿透完全交给窗口掩码（见 _refresh_mask），不使用 WS_EX_TRANSPARENT：
+        # 该样式位会让系统在命中测试时跳过整个窗口，圆环随之收不到右键，
+        # 点击穿到桌面会弹出系统右键菜单并抢走焦点，导致程序菜单无法关闭。
+        self._set_click_through(not self.adjust_mode)
+        self._refresh_mask()
         self.update()
 
-    def _refresh_mask(self):
-        if not self.adjust_mode:
-            return
+    def _ring_region(self):
         s = self.scale
         cx = int(BASE_W * s / 2)
         cy = int(BASE_H * s / 2)
         r = int((RING_R + RING_HIT_PAD) * s)
-        region = QRegion(cx - r, cy - r, 2 * r, 2 * r, QRegion.Ellipse)
+        return QRegion(cx - r, cy - r, 2 * r, 2 * r, QRegion.Ellipse)
+
+    def _refresh_mask(self):
+        """按模式设置窗口掩码。
+
+        掩码是 Windows 上唯一能"分区域穿透"的机制：掩码以外的点击系统不会
+        派发给本窗口，从而落到下层窗口；掩码以内的点击会被本窗口接收。
+        （WS_EX_TRANSPARENT 与 WM_NCHITTEST→HTTRANSPARENT 实测都做不到分区域：
+        前者让整个窗口被系统跳过、圆环也随之失效，后者对本窗口完全不起作用。）
+
+        代价：setMask 会裁剪绘制，所以掩码必须覆盖所有需要显示的内容 ——
+        非拖动模式下有卡片时要把卡片一起并进来，否则卡片会被裁掉。
+        """
+        s = self.scale
+        region = self._ring_region()
+        if not self.adjust_mode and not self.cards:
+            # 静止状态：只有圆环需要接收鼠标，其余区域全部穿透
+            self.setMask(region)
+            return
         card_h = int(CARD_H * self.card_size * s)
         for c in self.cards:
             cw = c.get("w", 0)
             if cw <= 0:
                 continue
-            x = int(c.get("x", 0) * s) - 4
-            y = int(c.get("y", 0) * s) - 4
-            w = int(cw * s) + 8
-            h = card_h + 8
-            region = region.united(QRegion(x, y, w, h))
-        self.setMask(region)
+            # 同时覆盖"动画进行中的位置"和"目标位置"，否则卡片滑入途中会被裁掉
+            xs = [c.get("x"), c.get("target_x")]
+            ys = [c.get("y"), c.get("target_y")]
+            for cx_ in [v for v in xs if v is not None]:
+                for cy_ in [v for v in ys if v is not None]:
+                    x = int(cx_ * s) - 4
+                    y = int(cy_ * s) - 4
+                    w = int(cw * s) + 8
+                    h = card_h + 8
+                    region = region.united(QRegion(x, y, w, h))
+        # 掩码不能超出窗口，否则 Qt 会按窗口裁剪，越界部分没有意义
+        self.setMask(region.intersected(QRegion(self.rect())))
 
     def set_adjust_mode(self, on):
         self.adjust_mode = bool(on)
@@ -1118,8 +1124,9 @@ class InputPet(QWidget):
             self._last_tick = now
             self.anim_timer.start()
 
-        if self.adjust_mode:
-            self._refresh_mask()
+        # 有卡片时必须重设掩码：setMask 会裁剪绘制，掩码里没有卡片的位置
+        # 卡片就画不出来（静止时掩码只含圆环）。
+        self._refresh_mask()
 
     def _relayout(self):
         if not self.cards:
@@ -1163,6 +1170,9 @@ class InputPet(QWidget):
                     c["x"] = c["target_x"]
                 if c["y"] is None:
                     c["y"] = c["target_y"]
+            if not self.cards:
+                # 卡片全部消失：掩码缩回圆环，其余区域恢复穿透
+                self._refresh_mask()
 
         k = 1 - math.exp(-dt / 0.055)
         for c in self.cards:

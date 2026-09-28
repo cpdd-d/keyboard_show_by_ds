@@ -10,6 +10,17 @@
 *.userosscache
 *.sln.docstates
 
+# ---- Python / PyInstaller ----
+__pycache__/
+*.py[cod]
+build/
+dist/
+*.spec
+
+# 自带字体不入库：体积大且多数商用字体不允许再分发
+assets/fonts/*
+!assets/fonts/README.md
+
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs
 

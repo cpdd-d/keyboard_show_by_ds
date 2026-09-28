@@ -204,8 +204,8 @@ class PositionDialog(QDialog):
 # ==========================================================
 class ColorPreviewDialog(QDialog):
     def __init__(self, parent, initial_color, preview_type,
-                 font_family, font_size, card_size,
-                 kb_text, ms_text, kb_bg, ms_bg):
+                    font_family, font_size, card_size,
+                    kb_text, ms_text, kb_bg, ms_bg):
         super().__init__(parent)
         self.setWindowTitle("自定义颜色")
         self.color = QColor(initial_color)
@@ -261,7 +261,7 @@ class ColorPreviewDialog(QDialog):
 
 class ThemeDialog(QDialog):
     def __init__(self, parent, theme_dict,
-                 font_family, font_size, card_size):
+                    font_family, font_size, card_size):
         super().__init__(parent)
         self.setWindowTitle("自定义主题")
         self.kb_text = QColor(theme_dict["kb_text"])
@@ -394,7 +394,7 @@ def _paint_card_preview(size, preview_type, focus_color,
     p.setFont(f)
     p.setPen(tcol)
     p.drawText(QRectF(x, y, w, card_h),
-               Qt.AlignHCenter | Qt.AlignVCenter, text)
+                         Qt.AlignHCenter | Qt.AlignVCenter, text)
     p.end()
     return pm
 
@@ -444,18 +444,6 @@ class InputPet(QWidget):
         self.ms_bg_color = self.settings.value(
             "ms_bg_color", DEFAULT_THEME["ms_bg"])
 
-        self._bundled_family = None
-        try:
-            fpath = os.path.join(BASE_DIR, "assets", "fonts",
-                                 "上首软糖体.ttf")
-            if os.path.exists(fpath):
-                fid = QFontDatabase.addApplicationFont(fpath)
-                fams = QFontDatabase.applicationFontFamilies(fid)
-                if fams:
-                    self._bundled_family = fams[0]
-        except Exception:
-            pass
-
         self._custom_family = None
         custom_path = self.settings.value("custom_font_path", "")
         if custom_path and os.path.exists(custom_path):
@@ -486,7 +474,7 @@ class InputPet(QWidget):
         self._ring_radius_global = (RING_R + RING_HIT_PAD)
 
         self.setFixedSize(int(BASE_W * self.scale),
-                          int(BASE_H * self.scale))
+                                 int(BASE_H * self.scale))
         avail = QApplication.primaryScreen().availableGeometry()
         saved_x = int(self.settings.value("pos_x", -1))
         saved_y = int(self.settings.value("pos_y", -1))
@@ -495,7 +483,7 @@ class InputPet(QWidget):
             self._clamp_to_screen()
         else:
             self.move(avail.center().x() - self.width() // 2,
-                      avail.bottom() - self.height() - 40)
+                                                         avail.bottom() - self.height() - 40)
 
         self.build_tray()
 
@@ -627,129 +615,122 @@ class InputPet(QWidget):
             self._menu_showing = False
 
     def _populate_settings_menu(self, parent):
-        # 键盘按键显示
-     act_kb = QAction("键盘按键显示", parent, checkable=True)
-     act_kb.setChecked(self.kb_enabled)
-     act_kb.toggled.connect(self._on_toggle_kb)
-     parent.addAction(act_kb)
+            # 键盘按键显示
+        act_kb = QAction("键盘按键显示", parent, checkable=True)
+        act_kb.setChecked(self.kb_enabled)
+        act_kb.toggled.connect(self._on_toggle_kb)
+        parent.addAction(act_kb)
 
-    # 鼠标点击显示
-     act_ms = QAction("鼠标点击显示", parent, checkable=True)
-     act_ms.setChecked(self.mouse_enabled)
-     act_ms.toggled.connect(self._on_toggle_mouse)
-     parent.addAction(act_ms)
+        # 鼠标点击显示
+        act_ms = QAction("鼠标点击显示", parent, checkable=True)
+        act_ms.setChecked(self.mouse_enabled)
+        act_ms.toggled.connect(self._on_toggle_mouse)
+        parent.addAction(act_ms)
 
-    # 显示时长
-     dur_menu = parent.addMenu("显示时长")
-     dur_group = QActionGroup(parent)
-     for label, sec in DUR_OPTIONS:
-        act = QAction(label, parent, checkable=True)
-        act.setChecked(abs(sec - self.kb_dur) < 0.01)
-        act.triggered.connect(
-            lambda _=False, s=sec: self.set_kb_dur(s))
-        dur_menu.addAction(act)
-        dur_group.addAction(act)
+        # 显示时长
+        dur_menu = parent.addMenu("显示时长")
+        dur_group = QActionGroup(parent)
+        for label, sec in DUR_OPTIONS:
+            act = QAction(label, parent, checkable=True)
+            act.setChecked(abs(sec - self.kb_dur) < 0.01)
+            act.triggered.connect(
+                lambda _=False, s=sec: self.set_kb_dur(s))
+            dur_menu.addAction(act)
+            dur_group.addAction(act)
 
-    # 面板大小
-     scale_menu = parent.addMenu("面板大小")
-     scale_group = QActionGroup(parent)
-     for label, val in SCALE_OPTIONS:
-        act = QAction(label, parent, checkable=True)
-        act.setChecked(abs(val - self.scale) < 0.01)
-        act.triggered.connect(
-            lambda _=False, v=val: self.set_scale(v))
-        scale_menu.addAction(act)
-        scale_group.addAction(act)
+        # 面板大小
+        scale_menu = parent.addMenu("面板大小")
+        scale_group = QActionGroup(parent)
+        for label, val in SCALE_OPTIONS:
+            act = QAction(label, parent, checkable=True)
+            act.setChecked(abs(val - self.scale) < 0.01)
+            act.triggered.connect(
+                lambda _=False, v=val: self.set_scale(v))
+            scale_menu.addAction(act)
+            scale_group.addAction(act)
 
-     # 卡片尺寸
-     csize_menu = parent.addMenu("卡片尺寸")
-     csize_group = QActionGroup(parent)
-     for label, val in CARDSIZE_OPTIONS:
-        act = QAction(label, parent, checkable=True)
-        act.setChecked(abs(val - self.card_size) < 0.01)
-        act.triggered.connect(
-            lambda _=False, v=val: self.set_card_size(v))
-        csize_menu.addAction(act)
-        csize_group.addAction(act)
+        # 卡片尺寸
+        csize_menu = parent.addMenu("卡片尺寸")
+        csize_group = QActionGroup(parent)
+        for label, val in CARDSIZE_OPTIONS:
+            act = QAction(label, parent, checkable=True)
+            act.setChecked(abs(val - self.card_size) < 0.01)
+            act.triggered.connect(
+                lambda _=False, v=val: self.set_card_size(v))
+            csize_menu.addAction(act)
+            csize_group.addAction(act)
 
-    # 刷新率
-     fps_menu = parent.addMenu("刷新率")
-     fps_group = QActionGroup(parent)
-     for label, val in FPS_OPTIONS:
-        act = QAction(label, parent, checkable=True)
-        act.setChecked(val == self.fps)
-        act.triggered.connect(
-            lambda _=False, v=val: self.set_fps(v))
-        fps_menu.addAction(act)
-        fps_group.addAction(act)
+        # 刷新率
+        fps_menu = parent.addMenu("刷新率")
+        fps_group = QActionGroup(parent)
+        for label, val in FPS_OPTIONS:
+            act = QAction(label, parent, checkable=True)
+            act.setChecked(val == self.fps)
+            act.triggered.connect(
+                lambda _=False, v=val: self.set_fps(v))
+            fps_menu.addAction(act)
+            fps_group.addAction(act)
 
-    # 主题色
-     theme_menu = parent.addMenu("主题色")
-     theme_group = QActionGroup(parent)
-     for name in THEMES.keys():
-        act = QAction(name, parent, checkable=True)
-        act.setChecked(name == self.theme_name)
-        act.triggered.connect(
-            lambda _=False, n=name: self.apply_theme(n))
-        theme_menu.addAction(act)
-        theme_group.addAction(act)
-     theme_menu.addSeparator()
-     act_custom = QAction("自定义颜色…", parent)
-     act_custom.triggered.connect(self._on_custom_theme)
-     theme_menu.addAction(act_custom)
+        # 主题色
+        theme_menu = parent.addMenu("主题色")
+        theme_group = QActionGroup(parent)
+        for name in THEMES.keys():
+            act = QAction(name, parent, checkable=True)
+            act.setChecked(name == self.theme_name)
+            act.triggered.connect(
+                lambda _=False, n=name: self.apply_theme(n))
+            theme_menu.addAction(act)
+            theme_group.addAction(act)
+        theme_menu.addSeparator()
+        act_custom = QAction("自定义颜色…", parent)
+        act_custom.triggered.connect(self._on_custom_theme)
+        theme_menu.addAction(act_custom)
 
-    # 字体
-     font_menu = parent.addMenu("字体")
-     font_group = QActionGroup(parent)
-     act_default = QAction("默认", parent, checkable=True)
-     act_default.setChecked(self.font_key == "默认")
-     act_default.triggered.connect(lambda: self.set_font("默认"))
-     font_menu.addAction(act_default)
-     font_group.addAction(act_default)
-     if self._bundled_family:
-        act_b = QAction(self._bundled_family, parent, checkable=True)
-        act_b.setChecked(self.font_key == self._bundled_family)
-        act_b.triggered.connect(
-            lambda: self.set_font(self._bundled_family))
-        font_menu.addAction(act_b)
-        font_group.addAction(act_b)
-     if self._custom_family:
-        act_c = QAction(self._custom_family, parent, checkable=True)
-        act_c.setChecked(self.font_key == self._custom_family)
-        act_c.triggered.connect(
-            lambda: self.set_font(self._custom_family))
-        font_menu.addAction(act_c)
-        font_group.addAction(act_c)
-     font_menu.addSeparator()
-     act_browse = QAction("浏览字体文件…", parent)
-     act_browse.triggered.connect(self._on_browse_font)
-     font_menu.addAction(act_browse)
+        # 字体
+        font_menu = parent.addMenu("字体")
+        font_group = QActionGroup(parent)
+        act_default = QAction("默认", parent, checkable=True)
+        act_default.setChecked(self.font_key == "默认")
+        act_default.triggered.connect(lambda: self.set_font("默认"))
+        font_menu.addAction(act_default)
+        font_group.addAction(act_default)
+        if self._custom_family:
+            act_c = QAction(self._custom_family, parent, checkable=True)
+            act_c.setChecked(self.font_key == self._custom_family)
+            act_c.triggered.connect(
+                lambda: self.set_font(self._custom_family))
+            font_menu.addAction(act_c)
+            font_group.addAction(act_c)
+        font_menu.addSeparator()
+        act_browse = QAction("浏览字体文件…", parent)
+        act_browse.triggered.connect(self._on_browse_font)
+        font_menu.addAction(act_browse)
 
-    # 字号
-     fsize_menu = parent.addMenu("字号")
-     fsize_group = QActionGroup(parent)
-     for label, sz in FSIZE_OPTIONS:
-        act = QAction(label, parent, checkable=True)
-        act.setChecked(sz == self.font_size)
-        act.triggered.connect(
-            lambda _=False, s=sz: self.set_font_size(s))
-        fsize_menu.addAction(act)
-        fsize_group.addAction(act)
+        # 字号
+        fsize_menu = parent.addMenu("字号")
+        fsize_group = QActionGroup(parent)
+        for label, sz in FSIZE_OPTIONS:
+            act = QAction(label, parent, checkable=True)
+            act.setChecked(sz == self.font_size)
+            act.triggered.connect(
+                lambda _=False, s=sz: self.set_font_size(s))
+            fsize_menu.addAction(act)
+            fsize_group.addAction(act)
 
-     parent.addSeparator()
+        parent.addSeparator()
 
-    # 调整位置
-     act_pos = QAction("调整位置…", parent)
-     act_pos.triggered.connect(self.open_position_dialog)
-     parent.addAction(act_pos)
+        # 调整位置
+        act_pos = QAction("调整位置…", parent)
+        act_pos.triggered.connect(self.open_position_dialog)
+        parent.addAction(act_pos)
 
-    # 开机自启动
-     act_auto = QAction("开机自启动", parent, checkable=True)
-     act_auto.setChecked(self.auto_start)
-     act_auto.toggled.connect(self._on_toggle_autostart)
-     parent.addAction(act_auto)
+        # 开机自启动
+        act_auto = QAction("开机自启动", parent, checkable=True)
+        act_auto.setChecked(self.auto_start)
+        act_auto.toggled.connect(self._on_toggle_autostart)
+        parent.addAction(act_auto)
 
-    # =================================================== 菜单回调
+        # =================================================== 菜单回调
     def _on_toggle_kb(self, checked):
         self.kb_enabled = checked
         self.settings.setValue("kb_enabled", checked)
@@ -779,8 +760,8 @@ class InputPet(QWidget):
             "ms_bg": self.ms_bg_color,
         }
         dlg = ThemeDialog(self, cur,
-                          self._resolve_font_family(),
-                          self.font_size, self.card_size)
+                             self._resolve_font_family(),
+                                                    self.font_size, self.card_size)
         if dlg.exec_() != QDialog.Accepted:
             return
         theme = dlg.result_theme()
@@ -850,8 +831,6 @@ class InputPet(QWidget):
     def _resolve_font_family(self):
         if self.font_key == "默认":
             return "Microsoft YaHei"
-        if self._bundled_family and self.font_key == self._bundled_family:
-            return self._bundled_family
         if self._custom_family and self.font_key == self._custom_family:
             return self._custom_family
         return "Microsoft YaHei"
@@ -887,12 +866,20 @@ class InputPet(QWidget):
             self.move(nx, ny)
 
     # =================================================== 系统托盘
+    def _app_icon(self):
+        """仓库自带图标文件；按 ips.png -> ips.ico -> icon.png 顺序查找。"""
+        for name in ("ips.png", "ips.ico", "icon.png"):
+            path = os.path.join(BASE_DIR, name)
+            if os.path.exists(path):
+                ico = QIcon(path)
+                if not ico.isNull():
+                    return ico
+        return None
+
     def _make_tray_icon(self):
-        icon_path = os.path.join(BASE_DIR, "icon.png")
-        if os.path.exists(icon_path):
-            ico = QIcon(icon_path)
-            if not ico.isNull():
-                return ico
+        ico = self._app_icon()
+        if ico is not None:
+            return ico
         pm = QPixmap(64, 64)
         pm.fill(Qt.transparent)
         p = QPainter(pm)
@@ -977,7 +964,7 @@ class InputPet(QWidget):
         new_h = int(BASE_H * v)
         self.setFixedSize(new_w, new_h)
         self.move(old_center.x() - new_w // 2,
-                  old_center.y() - new_h // 2)
+                                  old_center.y() - new_h // 2)
         self._clamp_to_screen()
         self._save_position()
         self._update_ring_cache()
@@ -1127,7 +1114,7 @@ class InputPet(QWidget):
         if not cards:
             return
         widths = [fm.horizontalAdvance(c["text"]) + card_pad
-                  for c in cards]
+                       for c in cards]
         total = sum(widths) + CARD_GAP * (len(widths) - 1)
         x = (BASE_W - total) / 2
         for c, w in zip(cards, widths):
@@ -1191,7 +1178,7 @@ class InputPet(QWidget):
             p.setPen(QPen(C_ADJUST_BORDER, 2, Qt.DashLine))
             p.setBrush(Qt.NoBrush)
             p.drawEllipse(QPointF(cx, cy),
-                          RING_R + 6, RING_R + 6)
+                                     RING_R + 6, RING_R + 6)
 
         p.end()
 
@@ -1353,7 +1340,7 @@ class InputPet(QWidget):
                 if has_mods:
                     self._kb_pressed_times[lab] = None
                     parts = [m for m in ("Ctrl", "Alt", "Shift", "Win")
-                             if m in self._kb_mods]
+                                              if m in self._kb_mods]
                     text = "+".join(parts + [lab])
                 else:
                     self._kb_pressed_times[lab] = time.time()

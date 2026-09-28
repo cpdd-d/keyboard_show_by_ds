@@ -1,0 +1,5 @@
+PyQt5>=5.15
+pynput>=1.7
+
+# 仅打包 exe 时需要（见 db.bat）
+# pyinstaller>=6.0

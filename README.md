@@ -43,30 +43,47 @@ python main.py
 
 ## 📦 打包
 
-安装 PyInstaller 后运行仓库里的 `db.bat`，它支持两种打包方式：
+安装 PyInstaller 后运行仓库里的 `db.bat`：
 
 ```bash
 pip install pyinstaller
 
-db.bat            # 默认：单文件，输出 dist\inputshow.exe
-db.bat onedir     # 目录版，输出 dist\inputshow\inputshow.exe
-db.bat onefile    # 等同不带参数
+db.bat            # 默认：目录版（便携版），输出 dist\inputshow_portable\
+db.bat onefile    # 单文件，输出 dist\inputshow.exe
 db.bat both       # 两种都打
 ```
 
-| | onefile | onedir |
+| | onedir / 便携版（默认） | onefile / 单文件 |
 | --- | --- | --- |
-| 产物 | 单个 `inputshow.exe`（31 MB） | `dist\inputshow\` 整个目录（44 MB） |
-| 启动 | 每次启动都要把整包解压到 `%TEMP%` | 直接从目录运行，**不解压** |
-| 启动速度 | 较慢（有解压开销） | 快 |
-| 分发 | 只发一个文件 | 必须整个目录一起发 |
-| 风险 | 解压这一步可能被安全软件拦截（实测 360 会偶发导致 `Could not create temporary directory!` 而启动失败） | 无此问题 |
+| 产物 | `dist\inputshow_portable\`（exe 2.3 MB + `_internal\`，共 44 MB） | `dist\inputshow.exe`（31 MB） |
+| 启动 | 直接从目录运行，**完全不解压** | 每次启动把整包解压到 `%TEMP%` |
+| 启动速度 | 快 | 较慢 |
+| 分发 | 打包整个目录成 zip 发出去 | 只发一个 exe |
+| 风险 | 无 | 解压失败就启动不了，见下 |
 
-> **建议优先用 `onedir`**：它规避了"启动时解压到临时目录"这一最容易出问题的环节。
-> 如果遇到 onefile 版双击没反应，先换 onedir 版试试。
+### ⚠️ 关于 "Could not create temporary directory!"
+
+这是 **onefile 版特有的**报错：单文件 exe 本质是自解压包，每次启动都要先把内容解压到临时目录，
+这一步被拦住就会弹这个框，程序根本起不来。常见原因：
+
+- 安全软件拦截解压行为（本机实测 360 会偶发拦截）
+- `%TEMP%` 目录状态异常（残留文件过多、权限被改、被清理工具锁住）
+- 系统盘空间不足
+
+**解决办法：直接用默认的目录版（便携版）。** 它没有任何解压步骤，从根上不存在这个问题：
+
+```
+dist\inputshow_portable\inputshow_portable.exe
+```
+
+把这个目录整个压缩成 zip 发给别人，对方解压后运行里面的 exe 即可
+（`_internal` 文件夹必须和 exe 放在一起，那是程序本体的一部分）。
+
+如果一定要用单文件版，可以先试试：清理 `%TEMP%` 里的 `_MEI*` 残留目录后重新双击；
+把 exe 放到非系统盘再运行；或把安全软件对本程序的拦截加入白名单。
 
 脚本已剔除 QtWebEngine、numpy 等无用模块，自动使用 `ips.ico` 作为程序图标，
-并在 `C:\upx` 存在时启用 UPX 压缩（不存在则自动改用 `--noupx`）。
+并在 `C:\upx` 存在时启用 UPX 压缩（设 `UPX_NO=1` 可关闭）。
 
 ## 🔤 换字体
 
@@ -148,27 +165,47 @@ python main.py
 
 ## 📦 Build
 
-`db.bat` supports two packaging modes:
+`db.bat` supports three packaging modes:
 
 ```bash
 pip install pyinstaller
 
-db.bat            # default: onefile  -> dist\inputshow.exe
-db.bat onedir     # folder build      -> dist\inputshow\inputshow.exe
-db.bat onefile    # same as no argument
+db.bat            # default: onedir (portable) -> dist\inputshow_portable\
+db.bat onefile    # single file               -> dist\inputshow.exe
 db.bat both       # build both
 ```
 
-| | onefile | onedir |
+| | onedir / portable (default) | onefile |
 | --- | --- | --- |
-| Output | single `inputshow.exe` (31 MB) | whole `dist\inputshow\` folder (44 MB) |
-| Startup | unpacks the archive into `%TEMP%` every launch | runs in place, **no unpacking** |
-| Speed | slower (unpack cost) | faster |
-| Sharing | send one file | send the whole folder |
-| Risk | the unpack step can be blocked by security software (observed with 360: `Could not create temporary directory!`) | none |
+| Output | `dist\inputshow_portable\` (2.3 MB exe + `_internal\`, 44 MB total) | `dist\inputshow.exe` (31 MB) |
+| Startup | runs in place, **no unpacking at all** | unpacks the archive into `%TEMP%` on every launch |
+| Speed | faster | slower |
+| Sharing | zip the whole folder | send one file |
+| Risk | none | if the unpack step is blocked the app cannot start |
 
-> **`onedir` is recommended** — it avoids the unpack-to-temp step entirely.
-> If the onefile build does not start when double-clicked, try the onedir build.
+### ⚠️ "Could not create temporary directory!"
+
+This error is **specific to the onefile build**. A single-file exe is a
+self-extracting archive: it must unpack itself into a temporary folder before
+Python even starts. If that step is blocked, you get this dialog and the
+program never runs. Typical causes:
+
+- security software blocking the unpack (observed with 360 on this machine)
+- a bad `%TEMP%` state (leftover files, changed permissions, locked by a cleaner)
+- not enough free space on the system drive
+
+**Use the default portable (onedir) build instead** — it has no unpack step at
+all, so this failure mode cannot happen:
+
+```
+dist\inputshow_portable\inputshow_portable.exe
+```
+
+Zip that folder and share the zip; the recipient extracts it and runs the exe
+inside (keep `_internal` next to the exe — it is part of the program).
+
+If you must use onefile: clear leftover `_MEI*` folders from `%TEMP%`, move the
+exe off the system drive, or whitelist it in your security software.
 
 ## ❓ FAQ
 

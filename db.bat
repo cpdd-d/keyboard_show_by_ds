@@ -3,24 +3,29 @@ setlocal
 rem ============================================================
 rem  Build inputshow with PyInstaller.
 rem
-rem    db.bat            onefile  : single inputshow.exe (extracts to %%TEMP%% on start)
-rem    db.bat onedir     onedir   : dist\inputshow\inputshow.exe + DLLs, no extraction
-rem    db.bat onefile    onefile  : same as no argument
-rem    db.bat both       both     : build both
+rem    db.bat            onedir : dist\inputshow_portable\   (recommended)
+rem    db.bat onefile    onefile: dist\inputshow.exe
+rem    db.bat both       both
 rem
-rem  Why onedir: the onefile bootloader unpacks the whole archive into a
-rem  temporary folder on every launch. That step can be blocked by security
-rem  software (observed: "Could not create temporary directory"), and it makes
-rem  startup slower. onedir runs straight from the folder, so it is the safer
-rem  choice for distribution.
+rem  WHY ONEDIR IS THE DEFAULT
+rem    A onefile exe is a self-extracting archive: every launch unpacks the
+rem    whole thing into a temporary folder first. If that step fails you get
+rem    "Could not create temporary directory!" and the program never starts -
+rem    typically because security software blocks it, the temp folder is in a
+rem    bad state, or the system drive is full.
+rem    The onedir build has no such step: it runs straight from its folder.
+rem
+rem  HOW TO SHIP IT
+rem    Zip dist\inputshow_portable\ and send the zip. The user extracts it and
+rem    runs inputshow_portable.exe inside. Keep the _internal folder next to
+rem    the exe - it is part of the program.
 rem ============================================================
 
 cd /d "%~dp0"
 
 set MODE=%~1
-if "%MODE%"=="" set MODE=onefile
+if "%MODE%"=="" set MODE=onedir
 
-set NAME=inputshow
 set ICON=ips.ico
 set UPXDIR=C:\upx
 
@@ -36,7 +41,7 @@ if not defined PY (
 )
 
 rem ---- common PyInstaller options ----
-set OPTS=--noconfirm --clean --name %NAME%
+set OPTS=--noconfirm --windowed
 set OPTS=%OPTS% --hidden-import=pynput.keyboard._win32
 set OPTS=%OPTS% --hidden-import=pynput.mouse._win32
 set OPTS=%OPTS% --hidden-import=PyQt5.QtNetwork
@@ -68,13 +73,17 @@ set OPTS=%OPTS% --exclude-module unittest
 set OPTS=%OPTS% --exclude-module pydoc
 
 if exist "%ICON%" set OPTS=%OPTS% -i "%ICON%"
-if exist "%UPXDIR%" (
-  set OPTS=%OPTS% --upx-dir "%UPXDIR%"
-) else (
+
+rem UPX shrinks the Qt DLLs a lot. It cannot pack python3*.dll and prints a
+rem "NotCompressibleException" warning, but PyInstaller skips that file and the
+rem build stays valid (verified). Set UPX_NO=1 to disable compression.
+if "%UPX_NO%"=="1" (
   set OPTS=%OPTS% --noupx
+) else (
+  if exist "%UPXDIR%" set OPTS=%OPTS% --upx-dir "%UPXDIR%"
 )
 
-rem ---- run ----
+rem ---- mode dispatch ----
 if /i "%MODE%"=="onedir"  goto onedir
 if /i "%MODE%"=="onefile" goto onefile
 if /i "%MODE%"=="both"    goto both
@@ -84,31 +93,33 @@ exit /b 1
 
 :onedir
 echo.
-echo === Building ONEDIR (dist\%NAME%\%NAME%.exe - no temp extraction) ===
-%PY% -m PyInstaller %OPTS% --onedir --windowed main.py
+echo === ONEDIR -^> dist\inputshow_portable\  (recommended, no temp extraction) ===
+if exist build\inputshow_portable rmdir /s /q build\inputshow_portable
+%PY% -m PyInstaller %OPTS% --clean --onedir --name inputshow_portable main.py
 if errorlevel 1 goto fail
-echo Built: dist\%NAME%\%NAME%.exe
+echo Built: dist\inputshow_portable\inputshow_portable.exe
 if /i "%MODE%"=="onedir" goto done
 
 :onefile
 echo.
-echo === Building ONEFILE (dist\%NAME%.exe - extracts to %%TEMP%%) ===
-%PY% -m PyInstaller %OPTS% --onefile --windowed main.py
+echo === ONEFILE -^> dist\inputshow.exe  (unpacks to a temp folder on every run) ===
+if exist build\inputshow rmdir /s /q build\inputshow
+%PY% -m PyInstaller %OPTS% --clean --onefile --name inputshow main.py
 if errorlevel 1 goto fail
-echo Built: dist\%NAME%.exe
+echo Built: dist\inputshow.exe
 goto done
 
 :both
 echo.
-echo === Building ONEDIR ===
-%PY% -m PyInstaller %OPTS% --onedir --windowed main.py
+echo === ONEDIR ===
+if exist build\inputshow_portable rmdir /s /q build\inputshow_portable
+%PY% -m PyInstaller %OPTS% --clean --onedir --name inputshow_portable main.py
 if errorlevel 1 goto fail
-echo Built: dist\%NAME%\%NAME%.exe
 echo.
-echo === Building ONEFILE ===
-%PY% -m PyInstaller %OPTS% --onefile --windowed main.py
+echo === ONEFILE ===
+if exist build\inputshow rmdir /s /q build\inputshow
+%PY% -m PyInstaller %OPTS% --clean --onefile --name inputshow main.py
 if errorlevel 1 goto fail
-echo Built: dist\%NAME%.exe
 goto done
 
 :fail
@@ -118,5 +129,7 @@ exit /b 1
 
 :done
 echo.
-echo All done.
+echo All done. Output in dist\
+if exist dist\inputshow_portable\inputshow_portable.exe echo   ONEDIR : dist\inputshow_portable\inputshow_portable.exe   ^<- zip this folder to share
+if exist dist\inputshow.exe echo   ONEFILE: dist\inputshow.exe
 exit /b 0

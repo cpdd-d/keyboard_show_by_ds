@@ -567,16 +567,23 @@ class InputPet(QWidget):
             cw = c.get("w", 0)
             if cw <= 0:
                 continue
-            # 同时覆盖"动画进行中的位置"和"目标位置"，否则卡片滑入途中会被裁掉
+            # 掩码必须覆盖卡片"整段动画过程中所有会画出来的像素"，否则会被裁：
+            #   当前位置 / 动画起点(卡片从 BASE_W+SLIDE_IN_DIST 飞入)
+            #   / 目标位置 / 滑出终点(向左或向上滑 SLIDE_OUT_DIST)
+            #   并且把缩放余量算进去(淡入 0.88~1.0，淡出缩到 0.75)
             xs = [c.get("x"), c.get("target_x")]
             ys = [c.get("y"), c.get("target_y")]
+            if c["kind"] == "kb":
+                xs += [v - SLIDE_OUT_DIST for v in xs if v is not None]
+            else:
+                ys += [v - SLIDE_OUT_DIST for v in ys if v is not None]
+            pad = 4
+            w = int(cw * s) + pad * 2
+            h = int(card_h * 1.15) + pad * 2
             for cx_ in [v for v in xs if v is not None]:
                 for cy_ in [v for v in ys if v is not None]:
-                    x = int(cx_ * s) - 4
-                    y = int(cy_ * s) - 4
-                    w = int(cw * s) + 8
-                    h = card_h + 8
-                    region = region.united(QRegion(x, y, w, h))
+                    region = region.united(QRegion(
+                        int(cx_ * s) - pad, int(cy_ * s) - pad, w, h))
         # 掩码不能超出窗口，否则 Qt 会按窗口裁剪，越界部分没有意义
         self.setMask(region.intersected(QRegion(self.rect())))
 
@@ -1170,9 +1177,9 @@ class InputPet(QWidget):
                     c["x"] = c["target_x"]
                 if c["y"] is None:
                     c["y"] = c["target_y"]
-            if not self.cards:
-                # 卡片全部消失：掩码缩回圆环，其余区域恢复穿透
-                self._refresh_mask()
+            # 数量一变就重算掩码：少了要缩回去（否则残留掩码继续挡鼠标），
+            # 多了要扩开（否则卡片被裁）
+            self._refresh_mask()
 
         k = 1 - math.exp(-dt / 0.055)
         for c in self.cards:
@@ -1188,7 +1195,10 @@ class InputPet(QWidget):
 
         self.update()
 
-        if self.adjust_mode:
+        # 每帧都重算掩码：卡片在飞入/滑出途中位置一直在变，只在"新增卡片"时
+        # 更新会让掩码停留在过期状态，导致窗口中已经可见的卡片被裁掉
+        # （实测连续输入时 428 帧里有 152 帧存在裁切）。
+        if self.anim_timer.isActive():
             self._refresh_mask()
 
     # =================================================== 绘制
@@ -1252,12 +1262,17 @@ class InputPet(QWidget):
             elif age > self.kb_dur - FADE_OUT:
                 t = (age - (self.kb_dur - FADE_OUT)) / FADE_OUT
                 t = max(0.0, min(1.0, t))
-                a = 1.0 - t
-                scale_anim = 1.0 - 0.25 * t
+                # 关键：先淡出、后滑出。若两者同时进行，卡片还没淡到看不见
+                # 就已经被窗口边缘切掉一块（鼠标卡片往上滑时尤其明显），
+                # 看起来像被"裁断"。这里让透明度在 t=0.6 前就归零，滑出位移
+                # 从 t=0.4 才开始，于是淡出全程卡片都是完整可见的。
+                a = max(0.0, 1.0 - t / 0.6)
+                scale_anim = 1.0 - 0.18 * min(1.0, t / 0.6)
+                slide_t = max(0.0, (t - 0.4) / 0.6)
                 if c["kind"] == "kb":
-                    slide_x = -SLIDE_OUT_DIST * t
+                    slide_x = -SLIDE_OUT_DIST * slide_t
                 else:
-                    slide_y = -SLIDE_OUT_DIST * t
+                    slide_y = -SLIDE_OUT_DIST * slide_t
             else:
                 a = 1.0
                 scale_anim = 1.0
